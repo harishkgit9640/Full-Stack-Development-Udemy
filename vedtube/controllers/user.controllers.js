@@ -48,7 +48,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     } catch (error) {
         throw new ErrorResponse(500, "while uploading coverImage")
-
     }
 
     const user = await User.create({
