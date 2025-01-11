@@ -4,6 +4,26 @@ import { asyncHandler } from '../utils/asyncHandler.js'
 import { User } from '../models/user.models.js'
 import { uploadOnCloudinary, deleteFromCloudinary } from '../middlewares/cloudinary.js'
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findById(userId);
+        if (user) {
+            throw new ErrorResponse(404, "User not found!");
+        }
+        const accessToken = await user.generateAccessToken()
+        const refreshToken = await user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        user.save({ validateBeforeSave: false })
+
+        return { accessToken, refreshToken }
+
+    } catch (error) {
+        throw new ErrorResponse(500, "Error generating refresh token and refresh token", error);
+    }
+}
+
+
 const registerUser = asyncHandler(async (req, res) => {
 
     const { fullname, username, email, password } = req.body
@@ -16,14 +36,18 @@ const registerUser = asyncHandler(async (req, res) => {
         $or: [{ username }, { email }]
     })
     if (existedUser) {
-        throw new ErrorResponse(409, "User with username or email already exists!")
+        throw new ErrorResponse(401, "User with username or email already exists!")
     }
 
     const avatarLocalPath = req.files?.avatar?.[0]?.path
+    console.log("coverImage : " + req.files?.coverImage)
     const coverImageLocalPath = req.files?.coverImage?.[0]?.path
 
     if (!avatarLocalPath) {
         throw new ErrorResponse(400, "Avatar file is required")
+    }
+    if (!coverImageLocalPath) {
+        throw new ErrorResponse(400, "coverImage file is required")
     }
 
     // const avatar = await uploadOnCloudinary(avatarLocalPath)
@@ -83,4 +107,45 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser }
+const logInUser = asyncHandler(async (req, res) => {
+
+    const { username, email, password } = req.body
+
+    if (!email && !password) {
+        throw new ErrorResponse(401, "email and password are required user name is optional");
+    }
+    const user = await User.findOne({
+        $or: [{ username }, { email }]
+    })
+    if (!user) {
+        throw new ErrorResponse(401, "User with username or email is not exist!")
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if (!isPasswordValid) {
+        throw new Error(401, "Invalid password!");
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+
+    const loggedInUser = await User.findById(user._id)
+        .select("-password -refreshToken")
+
+    const option = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production'
+    }
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, option)
+        .cookie("refreshToken", refreshToken, option)
+        .json(new ApiResponse(200,
+            { user: loggedInUser, accessToken, refreshToken },
+            "User Logged In Successfully"
+        ))
+
+})
+
+export { registerUser, logInUser }
