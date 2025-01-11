@@ -2,7 +2,7 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 import { ErrorResponse } from '../utils/ErrorResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { User } from '../models/user.models.js'
-import { uploadOnCloudinary } from '../middlewares/cloudinary.js'
+import { uploadOnCloudinary, deleteFromCloudinary } from '../middlewares/cloudinary.js'
 
 const registerUser = asyncHandler(async (req, res) => {
 
@@ -50,23 +50,35 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ErrorResponse(500, "while uploading coverImage")
     }
 
-    const user = await User.create({
-        fullname,
-        username: username.toLowerCase(),
-        email,
-        password,
-        avatar: avatar?.url,
-        coverImage: coverImage?.url || "",
-    })
+    try {
+        const user = await User.create({
+            fullname,
+            username: username.toLowerCase(),
+            email,
+            password,
+            avatar: avatar?.url,
+            coverImage: coverImage?.url || "",
+        })
 
-    const createdUser = await User.findById(user._id).select("-password -refreshToken")
-    if (!createdUser) {
-        throw new ErrorResponse(500, "Something went wrong while creating a new user!");
+        const createdUser = await User.findById(user._id).select("-password -refreshToken")
+        if (!createdUser) {
+            throw new ErrorResponse(500, "Something went wrong while creating a new user!");
+        }
+
+        return res
+            .status(201)
+            .json(new ApiResponse(200, createdUser, "User created successfully!"))
+    } catch (error) {
+
+        if (avatar) {
+            await deleteFromCloudinary(avatar.public_id)
+        }
+
+        if (coverImage) {
+            await deleteFromCloudinary(coverImage.public_id)
+        }
+        throw new ErrorResponse(500, "Something went wrong while creating a new user!" + error);
     }
-
-    return res
-        .status(201)
-        .json(new ApiResponse(200, createdUser, "User created successfully!"))
 
 
 })
