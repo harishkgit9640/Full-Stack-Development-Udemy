@@ -23,7 +23,6 @@ const generateAccessAndRefreshToken = async (userId) => {
     }
 }
 
-
 const registerUser = asyncHandler(async (req, res) => {
 
     const { fullname, username, email, password } = req.body
@@ -148,4 +147,41 @@ const logInUser = asyncHandler(async (req, res) => {
 
 })
 
-export { registerUser, logInUser }
+const logOutUser = asyncHandler(async (req, res) => {
+
+})
+const refreshToken = asyncHandler(async (req, res) => {
+
+    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+    if (!incomingRefreshToken) {
+        throw new ErrorResponse(401, "unAuthorized request")
+    }
+    try {
+        const decodedRefreshToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+        const user = await User.findById(decodedRefreshToken._id)
+        if (!user) {
+            throw new ErrorResponse(401, "Invalid refresh token")
+        }
+        const { accessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id)
+        const option = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        }
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, option)
+            .cookie("refreshToken", newRefreshToken, option)
+            .json(new ApiResponse(200,
+                { user, accessToken, newRefreshToken },
+                "Refresh token generated Successfully"
+            ))
+    } catch (error) {
+        throw new ErrorResponse(401, "Error while generating refresh token", error)
+    }
+
+})
+
+
+
+
+export { registerUser, logInUser, logOutUser, refreshToken }
