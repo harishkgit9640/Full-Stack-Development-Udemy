@@ -148,8 +148,8 @@ const logInUser = asyncHandler(async (req, res) => {
 })
 
 const logOutUser = asyncHandler(async (req, res) => {
-
 })
+
 const refreshToken = asyncHandler(async (req, res) => {
 
     const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
@@ -181,7 +181,14 @@ const refreshToken = asyncHandler(async (req, res) => {
 
 })
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        throw new ErrorResponse(404, "User not found")
+    }
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "User fetched Successfully"))
+})
 
-
-
-export { registerUser, logInUser, logOutUser, refreshToken }
+export { registerUser, logInUser, logOutUser, refreshToken, getCurrentUser }
