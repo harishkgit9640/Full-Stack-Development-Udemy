@@ -191,4 +191,13 @@ const getCurrentUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "User fetched Successfully"))
 })
 
+const updateUser = asyncHandler(async (req, res) => {
+    const id = req.params.id
+    const { username, password, email, fullname } = req.body
+    const user = await User.findById(req.user._id)
+    if (!user) {
+        throw new ErrorResponse(404, "User not found");
+    }
+})
+
 export { registerUser, logInUser, logOutUser, refreshToken, getCurrentUser }
