@@ -200,4 +200,4 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 })
 
-export { registerUser, logInUser, logOutUser, refreshToken, getCurrentUser }
+export { registerUser, logInUser, logOutUser, refreshToken, getCurrentUser, updateUser }
