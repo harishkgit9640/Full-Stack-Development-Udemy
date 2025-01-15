@@ -23,9 +23,14 @@ app.use(cookieParser());
 // import routes
 import healthCheckRouter from '../routers/healthcheck.routes.js'
 import userRouter from '../routers/user.routes.js'
+import playListRouter from '../routers/playlist.routes.js'
+import commentRouter from '../routers/comment.routes.js'
+
 
 // routes
 app.use("/api/v1/healthcheck", healthCheckRouter)
 app.use("/api/v1/users", userRouter)
+app.use("/api/v1/playlist", playListRouter)
+app.use("/api/v1/comment", commentRouter)
 
 export default app
