@@ -8,6 +8,9 @@ const addTweet = asyncHandler(async (req, res) => {
 const deleteTweet = asyncHandler(async (req, res) => {
 
 })
+const updateTweet = asyncHandler(async (req, res) => {
+
+})
 
 
 
