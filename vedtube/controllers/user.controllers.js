@@ -5,13 +5,18 @@ import { User } from '../models/user.models.js'
 import { uploadOnCloudinary, deleteFromCloudinary } from '../middlewares/cloudinary.js'
 
 const generateAccessAndRefreshToken = async (userId) => {
+
     try {
         const user = await User.findById(userId);
+
         if (user) {
             throw new ErrorResponse(404, "User not found!");
         }
         const accessToken = await user.generateAccessToken()
         const refreshToken = await user.generateRefreshToken()
+
+        console.log("accessToken : " + accessToken);
+        console.log("refreshToken : " + refreshToken);
 
         user.refreshToken = refreshToken
         user.save({ validateBeforeSave: false })
@@ -39,7 +44,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const avatarLocalPath = req.files?.avatar?.[0]?.path
-    console.log("coverImage : " + req.files?.coverImage)
     const coverImageLocalPath = req.files?.coverImage?.[0]?.path
 
     if (!avatarLocalPath) {
@@ -58,7 +62,6 @@ const registerUser = asyncHandler(async (req, res) => {
     let avatar;
     try {
         avatar = await uploadOnCloudinary(avatarLocalPath)
-        console.log(avatar);
 
     } catch (error) {
         throw new ErrorResponse(500, "while uploading Avatar Image")
@@ -67,7 +70,6 @@ const registerUser = asyncHandler(async (req, res) => {
     let coverImage;
     try {
         coverImage = await uploadOnCloudinary(coverImageLocalPath)
-        console.log(coverImage);
 
     } catch (error) {
         throw new ErrorResponse(500, "while uploading coverImage")
@@ -110,7 +112,7 @@ const logInUser = asyncHandler(async (req, res) => {
 
     const { username, email, password } = req.body
 
-    if (!email && !password) {
+    if (!email.trim() && !password.trim()) {
         throw new ErrorResponse(401, "email and password are required user name is optional");
     }
     const user = await User.findOne({
@@ -123,10 +125,10 @@ const logInUser = asyncHandler(async (req, res) => {
     const isPasswordValid = await user.isPasswordCorrect(password);
 
     if (!isPasswordValid) {
-        throw new Error(401, "Invalid password!");
+        throw new ErrorResponse(401, "Invalid password!");
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user?._id)
 
     const loggedInUser = await User.findById(user._id)
         .select("-password -refreshToken")

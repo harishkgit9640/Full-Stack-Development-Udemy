@@ -3,6 +3,8 @@ import { verifyJWT } from "../middlewares/auth.middlewares";
 
 const router = express.Router();
 
-router.route(verifyJWT)
+router.use(verifyJWT)
 router.route('/like').post();
 router.route('/unlike').post();
+
+export default router;
