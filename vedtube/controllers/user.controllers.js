@@ -9,14 +9,11 @@ const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
 
-        if (user) {
+        if (!user) {
             throw new ErrorResponse(404, "User not found!");
         }
         const accessToken = await user.generateAccessToken()
         const refreshToken = await user.generateRefreshToken()
-
-        console.log("accessToken : " + accessToken);
-        console.log("refreshToken : " + refreshToken);
 
         user.refreshToken = refreshToken
         user.save({ validateBeforeSave: false })
@@ -118,6 +115,12 @@ const logInUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({
         $or: [{ username }, { email }]
     })
+    // console.log(user.refreshToken);
+
+    // if (user.refreshToken) {
+    //     return new ErrorResponse(401, "user already logged in")
+    // }
+
     if (!user) {
         throw new ErrorResponse(401, "User with username or email is not exist!")
     }
@@ -150,8 +153,9 @@ const logInUser = asyncHandler(async (req, res) => {
 })
 
 const logOutUser = asyncHandler(async (req, res) => {
-    await User.findByIAndUpdate(req.user._id, {
-        $set: { refreshToken: undefined }
+    await User.findByIdAndUpdate(req?.user?._id, {
+        // $set: { refreshToken: undefined }
+        $unset: { refreshToken: 1 }
     }, { new: true })
     const options = {
         httpOnly: true,
@@ -196,7 +200,8 @@ const refreshToken = asyncHandler(async (req, res) => {
 })
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id)
+    console.log("user is : " + req?.user?._id)
+    const user = await User.findById(req?.user?._id)
     if (!user) {
         throw new ErrorResponse(404, "User not found")
     }
