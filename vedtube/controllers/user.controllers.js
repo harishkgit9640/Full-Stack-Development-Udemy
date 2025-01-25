@@ -47,9 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!avatarLocalPath) {
         throw new ErrorResponse(400, "Avatar file is required")
     }
-    if (!coverImageLocalPath) {
-        throw new ErrorResponse(400, "coverImage file is required")
-    }
+
 
     // const avatar = await uploadOnCloudinary(avatarLocalPath)
     // let coverImage = ""
@@ -65,12 +63,15 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ErrorResponse(500, "while uploading Avatar Image")
 
     }
-    let coverImage;
-    try {
-        coverImage = await uploadOnCloudinary(coverImageLocalPath)
 
-    } catch (error) {
-        throw new ErrorResponse(500, "while uploading coverImage")
+    let coverImage;
+    if (coverImageLocalPath) {
+        try {
+            coverImage = await uploadOnCloudinary(coverImageLocalPath)
+
+        } catch (error) {
+            throw new ErrorResponse(500, "while uploading coverImage")
+        }
     }
 
     try {
@@ -117,12 +118,12 @@ const logInUser = asyncHandler(async (req, res) => {
         $or: [{ username }, { email }]
     })
 
-    if (user.refreshToken || req?.cookies?.refreshToken) {
-        res.status(200).json(new ApiResponse(200, user, "User Already Logged In"))
-    }
-
     if (!user) {
         throw new ErrorResponse(401, "User with username or email is not exist!")
+    }
+
+    if (user.refreshToken || req?.cookies?.refreshToken) {
+        res.status(200).json(new ApiResponse(200, user, "User Already Logged In"))
     }
 
     const isPasswordValid = await user.isPasswordCorrect(password);
@@ -224,8 +225,8 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    const { email, username } = req.body
-    if (!email || !username) {
+    const { email, username, fullname } = req.body
+    if (!email || !username || !fullname) {
         throw new ErrorResponse(400, "username and email are required")
     }
 
@@ -244,7 +245,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(req?.user?._id, {
         $set: {
             email,
-            username
+            username,
+            fullname
         }
     }, { new: true }).select("-password -refreshToken")
 
