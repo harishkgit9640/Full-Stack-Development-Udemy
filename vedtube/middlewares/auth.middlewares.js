@@ -4,7 +4,8 @@ import { ErrorResponse } from '../utils/ErrorResponse.js';
 import { User } from '../models/user.models.js';
 
 const verifyJWT = asyncHandler(async (req, _, next) => {
-    const token = req.cookie.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    const token = req.cookies.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+
     if (!token) { throw new ErrorResponse(401, "Unauthorized access"); }
     try {
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);

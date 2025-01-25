@@ -2,6 +2,7 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 import { ErrorResponse } from '../utils/ErrorResponse.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { User } from '../models/user.models.js'
+import jwt from 'jsonwebtoken'
 import { uploadOnCloudinary, deleteFromCloudinary } from '../middlewares/cloudinary.js'
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -115,11 +116,10 @@ const logInUser = asyncHandler(async (req, res) => {
     const user = await User.findOne({
         $or: [{ username }, { email }]
     })
-    // console.log(user.refreshToken);
 
-    // if (user.refreshToken) {
-    //     return new ErrorResponse(401, "user already logged in")
-    // }
+    if (user.refreshToken || req?.cookies?.refreshToken) {
+        res.status(200).json(new ApiResponse(200, user, "User Already Logged In"))
+    }
 
     if (!user) {
         throw new ErrorResponse(401, "User with username or email is not exist!")
@@ -170,7 +170,7 @@ const logOutUser = asyncHandler(async (req, res) => {
 
 const refreshToken = asyncHandler(async (req, res) => {
 
-    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     if (!incomingRefreshToken) {
         throw new ErrorResponse(401, "unAuthorized request")
     }
@@ -200,7 +200,6 @@ const refreshToken = asyncHandler(async (req, res) => {
 })
 
 const getCurrentUser = asyncHandler(async (req, res) => {
-    console.log("user is : " + req?.user?._id)
     const user = await User.findById(req?.user?._id)
     if (!user) {
         throw new ErrorResponse(404, "User not found")
@@ -225,19 +224,27 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-    const { email, fullname } = req.body
-    if (!email || !fullname) {
-        throw new ErrorResponse(400, "fullname and email are required")
+    const { email, username } = req.body
+    if (!email || !username) {
+        throw new ErrorResponse(400, "username and email are required")
     }
+
+    const existedUser = await User.findOne({
+        $or: [{ username }, { email }]
+    })
+    if (existedUser) {
+        throw new ErrorResponse(401, "User with username or email already exists!")
+    }
+
     const user = await User.findById(req.user?._id)
     if (!user) {
         throw new ErrorResponse(404, "User not found");
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.user?._id, {
+    const updatedUser = await User.findByIdAndUpdate(req?.user?._id, {
         $set: {
             email,
-            fullname
+            username
         }
     }, { new: true }).select("-password -refreshToken")
 
@@ -282,6 +289,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
             coverImage: coverImage?.url
         }
     }).select("-password -refreshToken")
+    return res.status(200).json(new ApiResponse(200, user, "User coverImage updated successfully"))
 
 })
 
@@ -398,9 +406,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         ]
     )
-
-    console.log(channel);
-
     if (!channel?.length) {
         throw new ErrorResponse(404, "Channel not found")
     }

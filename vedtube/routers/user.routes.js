@@ -26,9 +26,9 @@ router.route('/logout').post(verifyJWT, logOutUser)
 router.route('/get-user').get(verifyJWT, getCurrentUser)
 router.route('/change-password').post(verifyJWT, changeCurrentPassword)
 router.route('/change-avatar').patch(verifyJWT,
-    upload.single([{ name: "avatar", maxCount: 1 }]), updateUserAvatar)
+    upload.single("avatar"), updateUserAvatar)
 router.route('/change-coverImage').patch(verifyJWT,
-    upload.single([{ name: "coverImage", maxCount: 1 }]), updateUserCoverImage)
+    upload.single("coverImage"), updateUserCoverImage)
 router.route('/update-account').patch(verifyJWT, updateAccountDetails)
 router.route('/get-channel-profile/:username').get(verifyJWT, getUserChannelProfile)
 router.route('/get-watch-history').get(verifyJWT, getWatchHistory)
