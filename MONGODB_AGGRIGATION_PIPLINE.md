@@ -1,30 +1,30 @@
-#MONGODB AGGRIGATION PIPLINE
+# MONGODB AGGRIGATION PIPLINE
 
-==================== sum of any collection ====================
+#sum of any collection
 
-`[
-  {
-    $match: {
-    	isActive : true
-    }
-  },
-  {
-    $count: 'activeUser'
-  }
-]`
+    [
+      {
+        $match: {
+        	isActive : true
+        }
+      },
+      {
+        $count: 'activeUser'
+      }
+    ]
 
 ==================== average of any collection ====================
 
-[
-{
-$group: {
-_id: null,
-avgAge :{
-$avg : "$age"
-}
-}
-}
-]
+    [
+      {
+        $group: {
+        _id: null,
+          avgAge :{
+          $avg : "$age"
+          }
+        }
+      }
+    ]
 
 ==================== top most record of any collection ====================
 [
@@ -211,18 +211,15 @@ $push : "$name"
 
 ==================== how manay users have 'ad' tag as second position in their tag ====================
 
-[
-{
-$match: {
-"tags.1" : "ad",
-
+    [
+    {
+    $match: {
+    "tags.1" : "ad",
     }
-
-},
-{
-$count: 'usercountwithtagad'
-}
-]
+    },{
+    $count: 'usercountwithtagad'
+    }
+    ]
 
 ==================== find the users have 'enim' and 'id' tag in their tag ====================
 
